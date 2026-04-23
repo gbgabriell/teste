@@ -4,16 +4,115 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YASMIM DELÍCIA</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+        .box { border: 1px solid #ccc; padding: 20px; border-radius: 8px; background: #f9f9f9; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background: #24b47e; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #1f9d6d; }
+        .comentario-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .comentario-item strong { color: #333; }
+        hr { margin: 30px 0; border: 0; border-top: 1px solid #ccc; }
+    </style>
 </head>
 <body>
-    <section>
-        <h2>Sistema de busca</h2>
-        <form action="#">
-            <input type="text" name="busca" placeholder="Teste">
-            <button type="submit">Pesquisar</button>
+
+    <h2>TESTES</h2>
+
+    <section class="box">
+        <h3>Pesquisa</h3>
+        <form action="#" method="GET">
+            <input type="text" name="q" placeholder="Teste de busca">
+            <button type="submit">Buscar</button>
         </form>
     </section>
 
+    <hr>
+
+    <section class="box">
+        <h3>Barra de Comentário</h3>
+        <form id="formComentario">
+            <label for="nome">Nome:</label>
+            <input type="text" id="nome" placeholder="Digite seu nome" required>
+            
+            <br><br>
+            
+            <label for="comentario">Comentário:</label>
+            <textarea id="comentario" rows="4" placeholder="Escreva seu comentário de teste..." required></textarea>
+            
+            <button type="submit" id="btnEnviar">ENVIAR</button>
+        </form>
+    </section>
+
+    <hr>
+
+    <section>
+        <h3>Comentários:</h3>
+        <div id="listaComentarios">Carregando comentários...</div>
+    </section>
+
+    <script>
+        // --- CONFIGURAÇÃO DO SUPABASE ---
+        // COLOQUE SEUS DADOS AQUI ABAIXO:
+        const SUPABASE_URL = 'https://wrnvhqatqzwhdqwirobq.supabase.co'; 
+        const SUPABASE_KEY = 'sb_publishable_KV8l_lZCfWHPvCX6o6ieyg_9-Gwbg5r'; 
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const form = document.getElementById('formComentario');
+        const lista = document.getElementById('listaComentarios');
+
+        // FUNÇÃO PARA BUSCAR COMENTÁRIOS DO BANCO
+        async function buscarComentarios() {
+            const { data, error } = await supabaseClient
+                .from('comentarios')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                lista.innerHTML = "Erro ao carregar: " + error.message;
+            } else {
+                lista.innerHTML = ""; // Limpa o carregando
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'comentario-item';
+                    div.innerHTML = `<strong>${item.nome}</strong>: <p>${item.comentario}</p>`;
+                    lista.appendChild(div);
+                });
+            }
+        }
+
+        // FUNÇÃO PARA ENVIAR NOVO COMENTÁRIO
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = true;
+            btn.innerText = "Enviando...";
+
+            const nomeVal = document.getElementById('nome').value;
+            const comentarioVal = document.getElementById('comentario').value;
+
+            const { error } = await supabaseClient
+                .from('comentarios')
+                .insert([{ nome: nomeVal, comentario: comentarioVal }]);
+
+            if (error) {
+                alert("Erro ao salvar: " + error.message);
+            } else {
+                form.reset();
+                buscarComentarios(); // Atualiza a lista na hora
+            }
+            
+            btn.disabled = false;
+            btn.innerText = "Enviar para o Banco";
+        });
+
+        // Inicia a lista quando a página abre
+        buscarComentarios();
+    </script>
 
 </body>
 </html>
